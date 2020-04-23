@@ -1,41 +1,107 @@
 package com.algaworks.osworks.api.controller;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
+import javax.validation.Valid;
+
+import org.hibernate.loader.plan.exec.process.spi.ReturnReader;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algaworks.osworks.domain.model.Cliente;
+import com.algaworks.osworks.domain.repository.ClienteRepository;
+import com.algaworks.osworks.domain.service.CadastroClienteService;
 
 @RestController
+@RequestMapping("/clientes")
 public class ClienteController {
 
+//	@PersistenceContext
+//	private EntityManager manager;
 	
-	@GetMapping("/clientes")
-	public List<Cliente>  listar() {
+	@Autowired
+	private CadastroClienteService cadastroClienteService;
+	
+	@Autowired
+	private ClienteRepository clienteRepository;
+	
+	@GetMapping
+	public List<Cliente> listar() {
+
+		return clienteRepository.findAll();
 		
-		Cliente cliente1 = new Cliente();
-		cliente1.setId(1L);
-		cliente1.setNome("Joao");
-		cliente1.setEmail("joao@xpto.com");
-		cliente1.setTelefone("123456789");
+		//return clienteRepository.findByNome("Joao da Silva");
 		
-		Cliente cliente2 = new Cliente();
-		cliente2.setId(2L);
-		cliente2.setNome("Maria");
-		cliente2.setEmail("maria@xpto.com");
-		cliente2.setTelefone("987654321");
+		//return clienteRepository.findByNomeContaining("Maria");
 		
-		Cliente cliente3 = new Cliente();
-		cliente3.setId(3L);
-		cliente3.setNome("Paulo");
-		cliente3.setEmail("paulo@xpto.com");
-		cliente3.setTelefone("135798462");
+		//return manager.createQuery("from Cliente", Cliente.class).getResultList();
 		
-		return Arrays.asList(cliente1, cliente2, cliente3);
+	}
+	
+	@GetMapping("/{clienteId}")
+	public ResponseEntity<Cliente> buscar(@PathVariable Long clienteId) {
 		
+		Optional<Cliente> cliente = clienteRepository.findById(clienteId);
 		
+		if(cliente.isPresent()) {
+			
+			return ResponseEntity.ok(cliente.get());
+			
+		}
+		
+		return ResponseEntity.notFound().build();
+		
+	}
+	
+	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
+	public Cliente adicionar(@Valid @RequestBody Cliente cliente) {
+		
+		//return clienteRepository.save(cliente);
+		return cadastroClienteService.salvar(cliente);
+	}
+	
+	@PutMapping("/{clienteId}")
+	public ResponseEntity<Cliente> atualizar(@Valid @PathVariable Long clienteId, @RequestBody Cliente cliente) {
+		
+		if(!clienteRepository.existsById(clienteId)) {
+			
+			return ResponseEntity.notFound().build();
+		}
+		
+		cliente.setId(clienteId);
+		//cliente = clienteRepository.save(cliente);
+		
+		cliente = cadastroClienteService.salvar(cliente);
+		
+		return ResponseEntity.ok(cliente);
+		
+	}
+	
+	@DeleteMapping("/{clienteId}")
+	public ResponseEntity<Void> remover(@PathVariable Long clienteId) {
+		
+		if(!clienteRepository.existsById(clienteId)) {
+			
+			return ResponseEntity.notFound().build();
+		}
+		
+		//clienteRepository.deleteById(clienteId);
+		
+		cadastroClienteService.excluir(clienteId);
+		
+		return ResponseEntity.noContent().build();
 	}
 	
 }
